@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 
 #include "../matmul.h"
@@ -110,7 +111,21 @@ void MatmulOperator::mat_mul_multithreading(struct matmul_params* params) {
     struct multithreading_thread_args threads_args[num_thread];
 
     // TODO: Thread creation
-
+    auto split = (n + num_thread - 1) / num_thread;
+    int start, end;
+    for (int i = 0; i < num_thread; i++) {
+        start = split * i;
+        // end = std::min(start + split, n);
+        end = split * (i + 1);
+        threads_args[i].start = start;
+        threads_args[i].end = end;
+        threads_args[i].params = params;
+        pthread_create(&thread_pool[i], NULL, multithreading_worker_func, &threads_args[i]);
+        // assert(result==0);
+    }
     // TODO: Join threads
+    for (int i = 0; i < num_thread; i++) {
+        pthread_join(thread_pool[i], NULL);
+    }
 };
 }  // namespace matmul
