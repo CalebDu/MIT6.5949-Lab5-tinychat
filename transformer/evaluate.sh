@@ -33,7 +33,7 @@ fi
 # Run the program with different arguments
 for arg in "${test_args[@]}"; do
     make clean
-    make chat test_linear -j IMP="$arg"
+    bear make chat test_linear -j IMP="$arg"
     # Check if make was successful
     if [ $? -ne 0 ]; then
         echo "Compilation failed!"

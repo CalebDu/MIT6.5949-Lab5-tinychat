@@ -3,12 +3,19 @@
 #include <stdio.h>
 
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
+#include <vector>
 
 #include "../matmul.h"
 #include "common.h"
 
 namespace matmul {
+
+#define mac(w_int4, a_int8, qj, sum0, sum1)                                   \
+    sum0 += a_int8[qj] * static_cast<signed char>((w_int4[qj] & 0x0f) - 8.0); \
+    sum1 += a_int8[qj + 32] * static_cast<signed char>((w_int4[qj] >> 4) - 8.0);
+
 void MatmulOperator::mat_mul_loop_unrolling(struct matmul_params *params) {
     const struct matrix *A = &params->A, *B = &params->B, *C = &params->C;
     const int block_size = params->block_size;  // block_size = 32
@@ -88,7 +95,10 @@ void MatmulOperator::mat_mul_loop_unrolling(struct matmul_params *params) {
                     intermediate_sum3_2nd = 0;
                 for (int qj = 0; qj < 32; qj++) {
                     // TODO: decode a packed byte into two int8 in the range of (-8, 7)
-
+                    mac(w0_int4, a_int8, qj, intermediate_sum0, intermediate_sum0_2nd);
+                    mac(w1_int4, a_int8, qj, intermediate_sum1, intermediate_sum1_2nd);
+                    mac(w2_int4, a_int8, qj, intermediate_sum2, intermediate_sum2_2nd);
+                    mac(w3_int4, a_int8, qj, intermediate_sum3, intermediate_sum3_2nd);
                     // TODO: int8 multiply and accumulate operation
                 }
                 // dequantize the sum into floating point

@@ -58,15 +58,16 @@ void quantize_fp32_to_int8(float* A, int8_t* qA, float* sA, int size, int block_
     int nb = size / 32;
     for (int i = 0; i < nb; i++) {
         // Load elements into 4 AVX vectors
-        __m256 v0 = _mm256_loadu_ps(A);
+        // a quantization group equal 32 fp32
+        __m256 v0 = _mm256_loadu_ps(A);  // load 8 fp32
         __m256 v1 = _mm256_loadu_ps(A + 8);
         __m256 v2 = _mm256_loadu_ps(A + 16);
         __m256 v3 = _mm256_loadu_ps(A + 24);
         A += 32;
 
         // Compute max(abs(e)) for the block
-        const __m256 signBit = _mm256_set1_ps(-0.0f);
-        __m256 maxAbs = _mm256_andnot_ps(signBit, v0);
+        const __m256 signBit = _mm256_set1_ps(-0.0f);   // -0.0f = (0x80000000) duplicate fp32 to 8 fp32
+        __m256 maxAbs = _mm256_andnot_ps(signBit, v0);  // get absmax
         maxAbs = _mm256_max_ps(maxAbs, _mm256_andnot_ps(signBit, v1));
         maxAbs = _mm256_max_ps(maxAbs, _mm256_andnot_ps(signBit, v2));
         maxAbs = _mm256_max_ps(maxAbs, _mm256_andnot_ps(signBit, v3));
@@ -74,7 +75,7 @@ void quantize_fp32_to_int8(float* A, int8_t* qA, float* sA, int size, int block_
         __m128 max4 = _mm_max_ps(_mm256_extractf128_ps(maxAbs, 1), _mm256_castps256_ps128(maxAbs));
         max4 = _mm_max_ps(max4, _mm_movehl_ps(max4, max4));
         max4 = _mm_max_ss(max4, _mm_movehdup_ps(max4));
-        const float maxScalar = _mm_cvtss_f32(max4);
+        const float maxScalar = _mm_cvtss_f32(max4); // max value for a group
 
         // Quantize these floats
         const float d = maxScalar / 127.f;
