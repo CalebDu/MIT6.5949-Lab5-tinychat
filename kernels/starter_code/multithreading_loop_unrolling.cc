@@ -141,8 +141,8 @@ void MatmulOperator::mat_mul_multithreading_loop_unrolling(struct matmul_params 
     int start, end;
     for (int i = 0; i < num_thread; i++) {
         start = split * i;
-        // end = std::min(start + split, n);
-        end = split * (i + 1);
+        end = std::min(start + split, n);
+        // end = split * (i + 1);
         threads_args[i].start = start;
         threads_args[i].end = end;
         threads_args[i].params = params;
